@@ -14,6 +14,7 @@ parser.add_argument("-o", "--out", default="SBR_Opt", help="Outputname ")
 parser.add_argument("-m", "--method", default="et", help="method ")
 parser.add_argument("-d", "--dir",  default="", help="The path to a directory of cert trees or roots file with \"Before\" histograms.")
 parser.add_argument( '--makeplot', help='makeplots', default=False,action="store_true")
+parser.add_argument("-w", "--write", help="write new HFSBR to file and exit", default=False, action="store_true") 
 
 args=parser.parse_args()
 
@@ -21,6 +22,8 @@ dooccupancy=False
 if args.method == 'oc':
     dooccupancy=True
 
+write_file = False
+if args.write: write_file = True
 if args.dir=="":
     hfRawHD5FileName = args.onefile
     print(hfRawHD5FileName)
@@ -309,12 +312,24 @@ tot_res_['type2_cut10_afterPed']={}
 tot_res_['type2_cut50_afterPed']={}
 tot_res_['lumi_correction_afterPed']={}
 
-xmin_=0.01320*0.5
-xmax_=0.01320*1.5
-XN=1
-ymin_=9.2020320e-05*1.18*0.5
-ymax_=9.2020320e-05*1.18*3.5
-YN=1
+#previous parameter values: 80.43, 4.019e-4, 6.055e-5, 88.814, 20.80, 5.760e-5
+#  (for ET)                 837.552, 9.0665e-5
+# Now here for OC: 80, 5.1e-4, 3.7e-05, 98.385000, 200, 4e-05, 85.264350, 24, 2.2e-05
+#                           2152.6, 1.1e-4 
+#xmin_=0.01320*0.5
+#xmax_=0.01320*1.5
+#range of percents to alter the values
+unct=.01
+xval=80.43
+xmin_=xval*(1.0-unct) #67.5*0.9
+xmax_=xval*(1.0+unct) #67.5*1.1
+XN=10
+#ymin_=9.2020320e-05*1.18*0.5
+#ymax_=9.2020320e-05*1.18*3.5
+yval=5.760e-5
+ymin_=yval*(1.0-unct)
+ymax_=yval*(1.0+unct)
+YN=10
 # after glow
 residualhist_type1_afterGlow=ROOT.TH2F("residualhist_type1_afterGlow",";xx;yy",XN,xmin_,xmax_,YN,ymin_,ymax_)
 residualhist_type2_afterGlow=ROOT.TH2F("residualhist_type2_afterGlow",";xx;yy",XN,xmin_,xmax_,YN,ymin_,ymax_)
@@ -336,6 +351,7 @@ for iix in range(residualhist_type1_afterGlow.GetNbinsX()):
     for iiy in range(residualhist_type1_afterGlow.GetNbinsY()):
         ix = residualhist_type1_afterGlow.GetXaxis().GetBinCenter(iix+1)
         iy = residualhist_type1_afterGlow.GetYaxis().GetBinCenter(iiy+1)
+        print("ix=%f, iy=%f"%(ix, iy)) 
         tot_res_['type1_afterGlow'][str(ix)+str(iy)]=0
         tot_res_['type2_afterGlow'][str(ix)+str(iy)]=0
         tot_res_['type2_cut5_afterGlow'][str(ix)+str(iy)]=0
@@ -403,6 +419,7 @@ for ifile in range(0,len(hists)):
                         thisLNHists['mu']['total'][3481:3500] = 0
 
                         for iix in range(residualhist_type1_afterGlow.GetNbinsX()):
+                            print("Now working on ifile: %d ; icols: %d ; iix: %d"%(ifile, icols, iix)) 
                             for iiy in range(residualhist_type1_afterGlow.GetNbinsY()):
                                 ix = residualhist_type1_afterGlow.GetXaxis().GetBinCenter(iix+1)
                                 iy = residualhist_type1_afterGlow.GetYaxis().GetBinCenter(iiy+1)
@@ -410,25 +427,33 @@ for ifile in range(0,len(hists)):
                                 ##############
                                 if not dooccupancy:
                                     func=ROOT.TF1("func","exp((-x)/[0])*[1] + [2] + exp(-(x-[3])*(x-[3])/[4]/[4])*[5] ",0,5000)
-                                    func.SetParameters(67.5,4.58e-4,6e-05, 85, 17,7e-5)
+                                    #func.SetParameters(67.5,4.58e-4,6e-05, 85, 17,7e-5)
+                                    #func.SetParameters(80.43, 4.019e-4, 6.055e-5, 88.814, 20.80, 5.760e-5)
+                                    func.SetParameters(ix, 4.019e-4, 6.055e-5, 88.814, 20.80, iy)
+                                    #????
+                                    #func.SetParameters(72.2, 4.98e-4, 6.29e-5, 67.4, 16.3, 7.08e-5)
                                     func2=ROOT.TF1("func2","exp((-x)/[0])*[1]",0,5000)
-                                    func2.SetParameters(764.12490, 0.00010825920)
+                                    #func2.SetParameters(764.12490, 0.00010825920)
+                                    func2.SetParameters(837.552, 9.0665e-5)
                                     for i in range(2,180):
                                         HFSBR_new[i]= func.Eval(i)
                                     for i in range(180,len(HFSBR_new)):
                                         HFSBR_new[i]= func2.Eval(i)
-                                    HFSBR_new[1]=0.02847
-                                    #file = open("HFSBR_ET_22v0.txt", "w+")
-                                    #for ibxwrite in HFSBR_new:
-                                    #    file.write('%0.10f'%ibxwrite)
-                                    #    if ibxwrite!=HFSBR_new[-1]: file.write(', ')
-                                    #file.close()
-                                    #exit()
+                                    #HFSBR_new[1]=0.02847
+                                    HFSBR_new[1]=.03208
+                                    if write_file:
+                                        file = open("HFSBR_ET_22v1.txt", "w+")
+                                        for ibxwrite in HFSBR_new:
+                                            file.write('%0.10f'%ibxwrite)
+                                            if ibxwrite!=HFSBR_new[-1]: file.write(', ')
+                                        file.close()
+                                        exit()
                                 ##############
                                 # Best for OC method
                                 if dooccupancy:
                                     func=ROOT.TF1("func","exp((-x)/[0])*[1] + [2] + exp(-(x-[3])*(x-[3])/[4]/[4])*[5] + exp(-(x-[6])*(x-[6])/[7]/[7])*[8]",0,5000)
-                                    func.SetParameters(80, 5.1e-4, 3.7e-05, 98.385000, 200 , 4e-05,   85.264350, 24, 2.2e-05)
+                                    #func.SetParameters(80, 5.1e-4, 3.7e-05, 98.385000, 200 , 4e-05,   85.264350, 24, 2.2e-05)
+                                    func.SetParameters(ix, iy, 3.7e-05, 98.385000, 200 , 4e-05,   85.264350, 24, 2.2e-05)
                                     func2=ROOT.TF1("func2","exp((-x)/[0])*[1]",0,5000)
                                     func2.SetParameters(2152.6, 1.1e-4)
                                     for i in range(2,190):
@@ -436,12 +461,13 @@ for ifile in range(0,len(hists)):
                                     for i in range(190,len(HFSBR_new)):
                                         HFSBR_new[i]= func2.Eval(i)
                                     HFSBR_new[1]= 0.01102
-                                    #file = open("HFSBR_OC_22v0.txt", "w+")
-                                    #for ibxwrite in HFSBR_new:
-                                    #    file.write('%0.10f'%ibxwrite)
-                                    #    if ibxwrite!=HFSBR_new[-1]: file.write(', ')
-                                    #file.close()
-                                    #exit()
+                                    if write_file:
+                                        file = open("HFSBR_OC_22v1.txt", "w+")
+                                        for ibxwrite in HFSBR_new:
+                                            file.write('%0.10f'%ibxwrite)
+                                            if ibxwrite!=HFSBR_new[-1]: file.write(', ')
+                                        file.close()
+                                        exit()
                                 #plt_sbr(HFSBR,HFSBR_new)
                                 result_from_dynamic=MakeDynamicBunchMask(thisLNHists['mu']['total'])
 #[rawdata, minv, maxv, fracThreshold, dynamicThreshold, activeBXMask, NActiveBX]
@@ -478,6 +504,7 @@ for iix in range(residualhist_type1_afterGlow.GetNbinsX()):
     for iiy in range(residualhist_type1_afterGlow.GetNbinsY()):
         ix = residualhist_type1_afterGlow.GetXaxis().GetBinCenter(iix+1)
         iy = residualhist_type1_afterGlow.GetYaxis().GetBinCenter(iiy+1)
+        print("iix=%d ; iiy=%d ix=%f ; iy=%f ; tot_res_ = %f"%(iix, iiy, ix, iy, tot_res_['type1_afterGlow'][str(ix)+str(iy)]/nset)) 
         residualhist_type1_afterGlow.Fill(ix,iy,tot_res_['type1_afterGlow'][str(ix)+str(iy)]/nset)
         residualhist_type1_afterGlow_1D.Fill(ix,tot_res_['type1_afterGlow'][str(ix)+str(iy)]/nset)
         residualhist_type2_afterGlow.Fill(ix,iy,tot_res_['type2_afterGlow'][str(ix)+str(iy)]/nset)
@@ -513,10 +540,4 @@ exit()
     
     
 exit()
-
-
-
-
-
-
 
