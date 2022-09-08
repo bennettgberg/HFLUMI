@@ -319,14 +319,16 @@ tot_res_['lumi_correction_afterPed']={}
 #xmin_=0.01320*0.5
 #xmax_=0.01320*1.5
 #range of percents to alter the values
-unct=.01
-xval=80.43
+#98.28, 23.99 ; 835.080, 9.022e-5
+# 100.566, 25.33
+unct=.005
+xval=105.87 
 xmin_=xval*(1.0-unct) #67.5*0.9
 xmax_=xval*(1.0+unct) #67.5*1.1
 XN=10
 #ymin_=9.2020320e-05*1.18*0.5
 #ymax_=9.2020320e-05*1.18*3.5
-yval=5.760e-5
+yval=26.95 
 ymin_=yval*(1.0-unct)
 ymax_=yval*(1.0+unct)
 YN=10
@@ -429,18 +431,21 @@ for ifile in range(0,len(hists)):
                                     func=ROOT.TF1("func","exp((-x)/[0])*[1] + [2] + exp(-(x-[3])*(x-[3])/[4]/[4])*[5] ",0,5000)
                                     #func.SetParameters(67.5,4.58e-4,6e-05, 85, 17,7e-5)
                                     #func.SetParameters(80.43, 4.019e-4, 6.055e-5, 88.814, 20.80, 5.760e-5)
-                                    func.SetParameters(ix, 4.019e-4, 6.055e-5, 88.814, 20.80, iy)
+                                    func.SetParameters(79.29, 4.067e-4, 6.027e-5, 105.87, 26.95, 5.334e-5)
                                     #????
                                     #func.SetParameters(72.2, 4.98e-4, 6.29e-5, 67.4, 16.3, 7.08e-5)
                                     func2=ROOT.TF1("func2","exp((-x)/[0])*[1]",0,5000)
                                     #func2.SetParameters(764.12490, 0.00010825920)
-                                    func2.SetParameters(837.552, 9.0665e-5)
+                                    #func2.SetParameters(837.552, 9.0665e-5)
+                                    #func2.SetParameters(835.080, 9.022e-5)
+                                    func2.SetParameters(935.80, 8.5853e-5) 
                                     for i in range(2,180):
                                         HFSBR_new[i]= func.Eval(i)
                                     for i in range(180,len(HFSBR_new)):
                                         HFSBR_new[i]= func2.Eval(i)
                                     #HFSBR_new[1]=0.02847
-                                    HFSBR_new[1]=.03208
+                                    #HFSBR_new[1]=.03208
+                                    HFSBR_new[1]=.0323833
                                     if write_file:
                                         file = open("HFSBR_ET_22v1.txt", "w+")
                                         for ibxwrite in HFSBR_new:
