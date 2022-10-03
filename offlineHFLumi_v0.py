@@ -150,7 +150,8 @@ def SubtractPedestal(rawdata, mask_residual,activeBXMask, totalMuUn):
 def Makeplots(rawdata,minv, maxv, fracThreshold, dynamicThreshold, activeBXMask, rawdata_AfterGlow,rawdata_AfterPed, make_plots=False,HFSBR2=''):
     if make_plots:
             can=ROOT.TCanvas("can","",1200,1200)
-            if dooccupancy:
+            #if dooccupancy:
+            if 2+2==5:
                 if HFSBR2 !='':
                     can.Divide(2,2)
                 else:
@@ -160,7 +161,8 @@ def Makeplots(rawdata,minv, maxv, fracThreshold, dynamicThreshold, activeBXMask,
                     can.Divide(2,3)
                 else:
                     can.Divide(1,3)
-            if dooccupancy:
+            #if dooccupancy:
+            if 2+2==5:     
                 rawTHist=ROOT.TH1F("rawTHist",";bunch crossing;Average Occupancy",3564,0,3564)
                 rawTHistAfterG=ROOT.TH1F("rawTHistAfterG","set;bunch crossing;Average Occupancy",3564,0,3564)
                 rawTHistAfterPed=ROOT.TH1F("rawTHistAfterPed","set;bunch crossing;Average Occupancy",3564,0,3564)
@@ -200,11 +202,13 @@ def Makeplots(rawdata,minv, maxv, fracThreshold, dynamicThreshold, activeBXMask,
             rawTHistAfterG.Draw("hist")
             rawTHistAfterG.SetMaximum(0.05)
             rawTHistAfterG.SetMinimum(0.0)
-            if dooccupancy:
+            #if dooccupancy:
+            if 2+2 == 5:    
                 rawTHistAfterG.SetMaximum(0.01)
                 rawTHistAfterG.SetMinimum(-0.002)
             ####################################################
-            if not dooccupancy:
+            #if not dooccupancy:
+            if not 2+2==5:     
                 for ibx in range(MAX_NBX):
                     rawTHistAfterPed.Fill(ibx,rawdata_AfterPed[ibx])
                 if HFSBR2 !='':
@@ -242,10 +246,12 @@ def Makeplots(rawdata,minv, maxv, fracThreshold, dynamicThreshold, activeBXMask,
                 rawTHistAfterG2.Draw("hist")
                 rawTHistAfterG2.SetMaximum(0.05)
                 rawTHistAfterG2.SetMinimum(0.0)
-                if dooccupancy:
+                #if dooccupancy:
+                if 2+2 == 5:   
                     rawTHistAfterG2.SetMaximum(0.01)
                     rawTHistAfterG2.SetMinimum(-0.002)
-                if not dooccupancy:
+                #if not dooccupancy:
+                if not 2 + 2 == 5: 
                     can.cd(6)
                     for ibx in range(MAX_NBX):
                         rawTHistAfterPed2.Fill(ibx,rawdata2[ibx])
@@ -255,6 +261,7 @@ def Makeplots(rawdata,minv, maxv, fracThreshold, dynamicThreshold, activeBXMask,
                     rawTHistAfterPed2.Draw("hist")
                     rawTHistAfterPed2.SetMaximum(0.01)
                     rawTHistAfterPed2.SetMinimum(-0.01)
+            #error on next line on purpose, to automatically close files and exit gracefully
             input()
 
 def plt_sbr(HFSBR,HFSBR2=""):
@@ -321,17 +328,26 @@ tot_res_['lumi_correction_afterPed']={}
 #range of percents to alter the values
 #98.28, 23.99 ; 835.080, 9.022e-5
 # 100.566, 25.33
-unct=.005
-xval=105.87 
-xmin_=xval*(1.0-unct) #67.5*0.9
-xmax_=xval*(1.0+unct) #67.5*1.1
-XN=10
+#xedge/yedge: if the minimum occurred at the edge of the range
+#edges: -1 for low edge, +1 for high edge, 0 for not on the edge
+xedge = 0
+yedge = 0
+unct=0.02
+#132.37, 5.635
+#central x value (will vary up and down by unct*xval)
+xval=136.2  
+xmin_=xval*(1.0-unct + xedge*unct) 
+xmax_=xval*(1.0+unct + xedge*unct) #67.5*1.1
+#how many bins of different x values to try
+XN=1
 #ymin_=9.2020320e-05*1.18*0.5
 #ymax_=9.2020320e-05*1.18*3.5
-yval=26.95 
-ymin_=yval*(1.0-unct)
-ymax_=yval*(1.0+unct)
-YN=10
+#central y value (will vary up and down by unct*yval)
+yval=5.163
+ymin_=yval*(1.0-unct + yedge*unct)
+ymax_=yval*(1.0+unct + yedge*unct)
+#how many bins of different y values to try
+YN=1
 # after glow
 residualhist_type1_afterGlow=ROOT.TH2F("residualhist_type1_afterGlow",";xx;yy",XN,xmin_,xmax_,YN,ymin_,ymax_)
 residualhist_type2_afterGlow=ROOT.TH2F("residualhist_type2_afterGlow",";xx;yy",XN,xmin_,xmax_,YN,ymin_,ymax_)
@@ -447,7 +463,7 @@ for ifile in range(0,len(hists)):
                                     #HFSBR_new[1]=.03208
                                     HFSBR_new[1]=.0323833
                                     if write_file:
-                                        file = open("HFSBR_ET_22v1.txt", "w+")
+                                        file = open("HFSBR_ET_22v2.txt", "w+")
                                         for ibxwrite in HFSBR_new:
                                             file.write('%0.10f'%ibxwrite)
                                             if ibxwrite!=HFSBR_new[-1]: file.write(', ')
@@ -458,16 +474,20 @@ for ifile in range(0,len(hists)):
                                 if dooccupancy:
                                     func=ROOT.TF1("func","exp((-x)/[0])*[1] + [2] + exp(-(x-[3])*(x-[3])/[4]/[4])*[5] + exp(-(x-[6])*(x-[6])/[7]/[7])*[8]",0,5000)
                                     #func.SetParameters(80, 5.1e-4, 3.7e-05, 98.385000, 200 , 4e-05,   85.264350, 24, 2.2e-05)
-                                    func.SetParameters(ix, iy, 3.7e-05, 98.385000, 200 , 4e-05,   85.264350, 24, 2.2e-05)
+                                    #func.SetParameters(35.22, 5.192e-4, 3.999e-5, 98.85, 161.8 , 1.676e-4,   0, 0, 0)
+                                    #func.SetParameters(37.85, 5.260e-4, 3.906e-5, 98.85, 118.9, 1.676e-4,   132.37, 5.635, 1.052e-4)
+                                    func.SetParameters(37.85, 5.260e-4, 3.906e-5, 98.85, 118.9, 1.676e-4, 136.2, 5.163, 1.052e-4)
                                     func2=ROOT.TF1("func2","exp((-x)/[0])*[1]",0,5000)
-                                    func2.SetParameters(2152.6, 1.1e-4)
+                                    #func2.SetParameters(2152.6, 1.1e-4)
+                                    func2.SetParameters(2735, 8.851e-5)
                                     for i in range(2,190):
                                         HFSBR_new[i]= func.Eval(i)
                                     for i in range(190,len(HFSBR_new)):
                                         HFSBR_new[i]= func2.Eval(i)
-                                    HFSBR_new[1]= 0.01102
+                                    #HFSBR_new[1]= 0.01102
+                                    HFSBR_new[1]= 0.0190175
                                     if write_file:
-                                        file = open("HFSBR_OC_22v1.txt", "w+")
+                                        file = open("HFSBR_OC_22v3.txt", "w+")
                                         for ibxwrite in HFSBR_new:
                                             file.write('%0.10f'%ibxwrite)
                                             if ibxwrite!=HFSBR_new[-1]: file.write(', ')
