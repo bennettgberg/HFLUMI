@@ -1,0 +1,32 @@
+executable = optimize.sh
+#Step=0
+
+should_transfer_files = yes
+when_to_transfer_output = ON_EXIT
+
+nbunch = 24hb
+algo = oc
+#use_x509userproxy = true
+#Proxy_file = x509up_u104084
+Proxy_path = /afs/cern.ch/user/b/bgreenbe/x509up_u104084
+#transfer_input_files = $(Proxy_path),/afs/cern.ch/work/b/bgreenbe/private/lumi/HFLUMI/hd5_files/latest/,etparams.txt,ocparams_fullopt.txt,offlineHFLumi_v6.py,HFSBR_OC_22v3.txt,HFSBR.txt
+transfer_input_files = $(Proxy_path),/afs/cern.ch/work/b/bgreenbe/private/lumi/HFLUMI/hd5_files/diff_bunches/2450b/,etparams_$(nbunch).txt,ocparams_$(nbunch).txt,offlineHFLumi_v6.py,HFSBR_OC_22v3.txt,HFSBR.txt
+#error = err$(Step).Efmrl$(Item)
+#output = out$(Step).Efmrl$(Item)
+#log = log$(Step).Efmrl$(Item)
+
+error = errfile_$(algo)$(nbunch).err
+output = outfile_$(algo)$(nbunch).out
+log = logfile_$(algo)$(nbunch).log
+
+request_cpus = 1
+request_memory = 2048MB
+request_disk = 2048MB
+
+#+JobFlavour = "longlunch"
+#+JobFlavour = "workday"
+#+JobFlavour = "tomorrow"
++JobFlavour = "testmatch"
+
+arguments = $(nbunch) $(algo) $(PROCESS) $(Proxy_path)
+queue 1

@@ -1,5 +1,5 @@
 import sys, os
-from math import exp
+from math import exp,log
 import argparse
 import subprocess
 import ROOT
@@ -289,7 +289,8 @@ thisLN=0
 lastLN=-1
 # Read SBR
 if dooccupancy:
-    text_file = open("HFSBR_OC.txt", "r")
+    #text_file = open("HFSBR_OC.txt", "r")
+    text_file = open("HFSBR_OC_22v3.txt", "r")
     HFSBR = text_file.read().split(',')
     text_file.close()
     for i in range(len(HFSBR)):
@@ -332,22 +333,22 @@ tot_res_['lumi_correction_afterPed']={}
 #edges: -1 for low edge, +1 for high edge, 0 for not on the edge
 xedge = 0
 yedge = 0
-unct=0.02
+unct=0.0002
 #132.37, 5.635
 #central x value (will vary up and down by unct*xval)
-xval=136.2  
+xval=0.0183980
 xmin_=xval*(1.0-unct + xedge*unct) 
 xmax_=xval*(1.0+unct + xedge*unct) #67.5*1.1
 #how many bins of different x values to try
-XN=1
+XN=20
 #ymin_=9.2020320e-05*1.18*0.5
 #ymax_=9.2020320e-05*1.18*3.5
 #central y value (will vary up and down by unct*yval)
-yval=5.163
+yval=1.096e-4
 ymin_=yval*(1.0-unct + yedge*unct)
 ymax_=yval*(1.0+unct + yedge*unct)
 #how many bins of different y values to try
-YN=1
+YN=1 #0
 # after glow
 residualhist_type1_afterGlow=ROOT.TH2F("residualhist_type1_afterGlow",";xx;yy",XN,xmin_,xmax_,YN,ymin_,ymax_)
 residualhist_type2_afterGlow=ROOT.TH2F("residualhist_type2_afterGlow",";xx;yy",XN,xmin_,xmax_,YN,ymin_,ymax_)
@@ -445,16 +446,44 @@ for ifile in range(0,len(hists)):
                                 ##############
                                 if not dooccupancy:
                                     func=ROOT.TF1("func","exp((-x)/[0])*[1] + [2] + exp(-(x-[3])*(x-[3])/[4]/[4])*[5] ",0,5000)
-                                    #func.SetParameters(67.5,4.58e-4,6e-05, 85, 17,7e-5)
-                                    #func.SetParameters(80.43, 4.019e-4, 6.055e-5, 88.814, 20.80, 5.760e-5)
-                                    func.SetParameters(79.29, 4.067e-4, 6.027e-5, 105.87, 26.95, 5.334e-5)
+                                    func_p0 = 90.49 #ix #93.04
+                                    func_p1 = 4.750e-4 #4.067e-4
+                                    #func_p2 is the one we choose to be dependent to make sure func matches func2 at boundary
+                                    func_p3 = 91.05
+                                    func_p4 = ix #90.22 #ix #26.95
+                                    func_p5 = 1.417e-5 #iy #5.334e-5
+                                    func2_param0 = iy #1.147e-4 
+                                    func2_param1 = 685.1 #iy #793.1 
+                                    terma = func2_param0*exp(-180./func2_param1)
+                                    termb = -1* func_p1*exp(-180./func_p0)
+                                    termc =   -1* func_p5*exp(-(180.-func_p3)**2 / func_p4**2)
+                                    func_param2 = terma + termb + termc
+                                    print("func2_param0: %f ; func2_param1: %f ; terma: %f ; termb: %f ; termc: %f ; func_param2: %f"%(func2_param0, func2_param1, terma, termb, termc, func_param2)) 
+                                    ##func.SetParameters(67.5,4.58e-4,6e-05, 85, 17,7e-5)
+                                    ##func.SetParameters(80.43, 4.019e-4, 6.055e-5, 88.814, 20.80, 5.760e-5)
+                                    #func.SetParameters(79.29, 4.067e-4, 6.027e-5, 105.87, 26.95, 5.334e-5)
+                                    #func.SetParameters(79.29, 4.067e-4, 6.027e-5, 105.87, ix, 1.3e-10)
+                                    func.SetParameters(func_p0, func_p1, func_param2, func_p3, func_p4, func_p5)
                                     #????
                                     #func.SetParameters(72.2, 4.98e-4, 6.29e-5, 67.4, 16.3, 7.08e-5)
-                                    func2=ROOT.TF1("func2","exp((-x)/[0])*[1]",0,5000)
+                                    func2=ROOT.TF1("func2","exp((-x)/[1])*[0]",0,5000)
                                     #func2.SetParameters(764.12490, 0.00010825920)
                                     #func2.SetParameters(837.552, 9.0665e-5)
                                     #func2.SetParameters(835.080, 9.022e-5)
-                                    func2.SetParameters(935.80, 8.5853e-5) 
+                                    #func2_param1 = iy #8.5853e-5
+                                    #func2_param0 = iy 
+                                    #func2_param0 = (func.GetParameter(0)*exp(-180/func.GetParameter(1)) + func.GetParameter(2) + 
+                                    #    func.GetParameter(5)*exp(-(180 - func.GetParameter(3))**2 / func.GetParameter(4)**2) ) * exp(180 / func2_param1) 
+                                    #terma = func.GetParameter(0)*exp(-180.0/func.GetParameter(1) + 180.0/func2_param1)
+                                    #termb = func.GetParameter(2)*exp(180.0/func2_param1)
+                                    #termc = func.GetParameter(5)*exp(-(180 - func.GetParameter(3))**2 / func.GetParameter(4)**2 + 180.0/func2_param1)
+                                    #print("func2_param1: " + str(func2_param1)) 
+                                    #func2_param0 = terma + termb + termc
+                                    #func2.SetParameters(935.80, 8.5853e-5) 
+                                    #func2_param1 = -180. / log( func.Eval(180) / func2_param0 ) 
+                                    print("func2_param0: %f, func(180): %f, func2_param1: %f"%(func2_param0, func.Eval(180), func2_param1)) 
+                                    func2.SetParameters(func2_param0, func2_param1) 
+                                    #print("func2 @x=180:%f ; 200:%f ; 500:%f ; 1000:%f ; 2000:%f ; 3000: %f"%(func2.Eval(180), func2.Eval(200), func2.Eval(500), func2.Eval(1000), func2.Eval(2000), func2.Eval(3000))) 
                                     for i in range(2,180):
                                         HFSBR_new[i]= func.Eval(i)
                                     for i in range(180,len(HFSBR_new)):
@@ -463,7 +492,7 @@ for ifile in range(0,len(hists)):
                                     #HFSBR_new[1]=.03208
                                     HFSBR_new[1]=.0323833
                                     if write_file:
-                                        file = open("HFSBR_ET_22v2.txt", "w+")
+                                        file = open("HFSBR_ET_22v11.txt", "w+")
                                         for ibxwrite in HFSBR_new:
                                             file.write('%0.10f'%ibxwrite)
                                             if ibxwrite!=HFSBR_new[-1]: file.write(', ')
@@ -472,22 +501,37 @@ for ifile in range(0,len(hists)):
                                 ##############
                                 # Best for OC method
                                 if dooccupancy:
-                                    func=ROOT.TF1("func","exp((-x)/[0])*[1] + [2] + exp(-(x-[3])*(x-[3])/[4]/[4])*[5] + exp(-(x-[6])*(x-[6])/[7]/[7])*[8]",0,5000)
+                                    #func=ROOT.TF1("func","exp((-x)/[0])*[1] + [2] + exp(-(x-[3])*(x-[3])/[4]/[4])*[5] + exp(-(x-[6])*(x-[6])/[7]/[7])*[8]",0,5000)
+                                    func=ROOT.TF1("func","exp((-x)/[0])*[1] + [2] + exp(-(x-[3])*(x-[3])/[4]/[4])*[5]",0,5000)
+                                    func_p0 = 56.15     
+                                    func_p1 = 6.240e-4
+                                    #func_p2 is the one we choose to be dependent to make sure func matches func2 at boundary
+                                    func_p3 = 123.0    
+                                    func_p4 = 48.48 
+                                    func_p5 = 1.140e-4
+                                    func2_param0 = 1.010e-4 #1.147e-4
+                                    func2_param1 = 829.2 #793.1
+                                    func_param2 = func2_param0*exp(-180./func2_param1) - func_p1*exp(-180./func_p0) - func_p5*exp(-(180.-func_p3)**2 / func_p4**2)
+                                    #func=ROOT.TF1("func","exp((-x)/[0])*[1] + [2]",0,5000)
                                     #func.SetParameters(80, 5.1e-4, 3.7e-05, 98.385000, 200 , 4e-05,   85.264350, 24, 2.2e-05)
                                     #func.SetParameters(35.22, 5.192e-4, 3.999e-5, 98.85, 161.8 , 1.676e-4,   0, 0, 0)
                                     #func.SetParameters(37.85, 5.260e-4, 3.906e-5, 98.85, 118.9, 1.676e-4,   132.37, 5.635, 1.052e-4)
-                                    func.SetParameters(37.85, 5.260e-4, 3.906e-5, 98.85, 118.9, 1.676e-4, 136.2, 5.163, 1.052e-4)
-                                    func2=ROOT.TF1("func2","exp((-x)/[0])*[1]",0,5000)
-                                    #func2.SetParameters(2152.6, 1.1e-4)
-                                    func2.SetParameters(2735, 8.851e-5)
+                                    #func.SetParameters(37.85, 5.260e-4, 3.906e-5, 98.85, 118.9, 1.676e-4, 136.2, 5.163, 1.052e-4)
+                                    #func.SetParameters(37.85, 5.260e-4, func_param2, 98.85, 118.9, 1.676e-4)
+                                    func.SetParameters(func_p0, func_p1, func_param2, func_p3, func_p4, func_p5)
+                                    func2=ROOT.TF1("func2","exp((-x)/[1])*[0]",0,5000)
+                                    #func2_param0 = (func.GetParameter(0)*exp(-180/func.GetParameter(1)) + func.GetParameter(2) + 
+                                    #    func.GetParameter(5)*exp(-(180 - func.GetParameter(3))**2 / func.GetParameter(4)**2) ) * exp(180 / func2_param1) 
+                                    #func2.SetParameters(2735, 8.851e-5)
+                                    func2.SetParameters(func2_param0, func2_param1)
                                     for i in range(2,190):
                                         HFSBR_new[i]= func.Eval(i)
                                     for i in range(190,len(HFSBR_new)):
                                         HFSBR_new[i]= func2.Eval(i)
                                     #HFSBR_new[1]= 0.01102
-                                    HFSBR_new[1]= 0.0190175
+                                    HFSBR_new[1]= ix #0.0190175
                                     if write_file:
-                                        file = open("HFSBR_OC_22v3.txt", "w+")
+                                        file = open("HFSBR_OC_22v3_2.txt", "w+")
                                         for ibxwrite in HFSBR_new:
                                             file.write('%0.10f'%ibxwrite)
                                             if ibxwrite!=HFSBR_new[-1]: file.write(', ')
